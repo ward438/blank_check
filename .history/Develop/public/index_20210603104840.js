@@ -5,10 +5,8 @@ let offlineTransactionWatch = setInterval(function () {
   if (window.navigator.onLine && storedTransactions.length) {
     console.log('todo')
     storedTransactions.forEach(function (transaction) {
-      let isAdding = transaction.value > 0;
-      sendTransaction(isAdding, transaction);
-    });
-    localStorage.removeItem('storedTransactions');
+      console.log(transaction)
+    })
   }
 }, 2000);
 
@@ -25,7 +23,7 @@ getStoredTransactions = () => {
 fetchInterceptor = (...args) => (async (args) => {
   let response;
   console.log(args);
-  if (window.navigator.onLine) {
+  if (!window.navigator.onLine) {
     response = await fetch(...args);
   } else {
     if (args.length > 1) {

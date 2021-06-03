@@ -22,15 +22,15 @@ router.post("/api/transaction/bulk", ({body}, res) => {
 });
 
 router.get("/api/transaction", (req, res) => {
-  // if(location.host === "http://localhost:3000" || location.hostname === "localhost"){
-     Transaction.find({}).sort({date: -1})
+  if(location.hostname === "localhost" || location.name === "http://localhost:3000"){
+    Transaction.find({}).sort({date: -1})
     .then(dbTransaction => {
       res.json(dbTransaction);
     })
     .catch(err => {
       res.status(404).json(err);
     });
-  // }
+  }
   
 });
 

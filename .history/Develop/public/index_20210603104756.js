@@ -5,10 +5,8 @@ let offlineTransactionWatch = setInterval(function () {
   if (window.navigator.onLine && storedTransactions.length) {
     console.log('todo')
     storedTransactions.forEach(function (transaction) {
-      let isAdding = transaction.value > 0;
-      sendTransaction(isAdding, transaction);
-    });
-    localStorage.removeItem('storedTransactions');
+      console.log(transaction)
+    })
   }
 }, 2000);
 
@@ -25,7 +23,7 @@ getStoredTransactions = () => {
 fetchInterceptor = (...args) => (async (args) => {
   let response;
   console.log(args);
-  if (window.navigator.onLine) {
+  if (!window.navigator.onLine) {
     response = await fetch(...args);
   } else {
     if (args.length > 1) {
@@ -124,10 +122,11 @@ function populateChart() {
 }
 
 function sendTransaction(isAdding, transaction = null) {
-  let nameEl = document.querySelector("#t-name");
-  let amountEl = document.querySelector("#t-amount");
-  let errorEl = document.querySelector(".form .error");
   if (transaction == null) {
+    let nameEl = document.querySelector("#t-name");
+    let amountEl = document.querySelector("#t-amount");
+    let errorEl = document.querySelector(".form .error");
+
     // validate form
     if (nameEl.value === "" || amountEl.value === "") {
       errorEl.textContent = "Missing Information";
@@ -138,7 +137,7 @@ function sendTransaction(isAdding, transaction = null) {
     }
 
     // create record
-    transaction = {
+    let transaction = {
       name: nameEl.value,
       value: amountEl.value,
       date: new Date().toISOString()

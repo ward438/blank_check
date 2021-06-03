@@ -1,49 +1,22 @@
 let transactions = [];
 let myChart;
-let offlineTransactionWatch = setInterval(function () {
-  let storedTransactions = getStoredTransactions();
-  if (window.navigator.onLine && storedTransactions.length) {
-    console.log('todo')
-    storedTransactions.forEach(function (transaction) {
-      let isAdding = transaction.value > 0;
-      sendTransaction(isAdding, transaction);
-    });
-    localStorage.removeItem('storedTransactions');
-  }
-}, 2000);
-
-getStoredTransactions = () => {
-  let storedTransactions = localStorage.getItem('storedTransactions');
-  if (storedTransactions === null) {
-    storedTransactions = [];
-  } else {
-    storedTransactions = JSON.parse(storedTransactions);
-  }
-  return storedTransactions;
-}
 
 fetchInterceptor = (...args) => (async (args) => {
-  let response;
+  let result;
   console.log(args);
-  if (window.navigator.onLine) {
-    response = await fetch(...args);
+  if (!window.navigator.onLine) {
+    result = await fetch(...args);
   } else {
     if (args.length > 1) {
       data = JSON.parse(args[1].body);
-      storedTransactions = getStoredTransactions();
-      storedTransactions.push(data);
-      localStorage.setItem('storedTransactions', JSON.stringify(storedTransactions));
-
-      response = {
-        json: () => data
+      results = () => {
+        // todo - do stuff in localstorage for create
       }
     } else {
-      response = {
-        json: () => JSON.parse(localStorage.getItem('transactions'))
-      };
+      // todo - return stuff in localstorage for a GET
     }
   }
-  return response;
+  return result;
 })(args);
 
 fetchInterceptor("/api/transaction")
@@ -53,7 +26,8 @@ fetchInterceptor("/api/transaction")
   .then(data => {
     // save db data on global variable
     transactions = data;
-    localStorage.setItem('transactions', JSON.stringify(transactions));
+    // todo - store in localstorage so you can fetch if offline
+    localStorage.setItem('transactions', transactions);
     populateTotal();
     populateTable();
     populateChart();
@@ -123,40 +97,40 @@ function populateChart() {
   });
 }
 
-function sendTransaction(isAdding, transaction = null) {
+function sendTransaction(isAdding) {
   let nameEl = document.querySelector("#t-name");
   let amountEl = document.querySelector("#t-amount");
   let errorEl = document.querySelector(".form .error");
-  if (transaction == null) {
-    // validate form
-    if (nameEl.value === "" || amountEl.value === "") {
-      errorEl.textContent = "Missing Information";
-      return;
-    }
-    else {
-      errorEl.textContent = "";
-    }
 
-    // create record
-    transaction = {
-      name: nameEl.value,
-      value: amountEl.value,
-      date: new Date().toISOString()
-    };
-
-    // if subtracting funds, convert amount to negative number
-    if (!isAdding) {
-      transaction.value *= -1;
-    }
-
-    // add to beginning of current array of data
-    transactions.unshift(transaction);
-
-    // re-run logic to populate ui with new record
-    populateChart();
-    populateTable();
-    populateTotal();
+  // validate form
+  if (nameEl.value === "" || amountEl.value === "") {
+    errorEl.textContent = "Missing Information";
+    return;
   }
+  else {
+    errorEl.textContent = "";
+  }
+
+  // create record
+  let transaction = {
+    name: nameEl.value,
+    value: amountEl.value,
+    date: new Date().toISOString()
+  };
+
+  // if subtracting funds, convert amount to negative number
+  if (!isAdding) {
+    transaction.value *= -1;
+  }
+
+  // add to beginning of current array of data
+  transactions.unshift(transaction);
+
+  // re-run logic to populate ui with new record
+  populateChart();
+  populateTable();
+  populateTotal();
+
   // also send to server
   fetchInterceptor("/api/transaction", {
     method: "POST",
@@ -178,6 +152,14 @@ function sendTransaction(isAdding, transaction = null) {
         nameEl.value = "";
         amountEl.value = "";
       }
+    })
+    .catch(err => {
+      // fetch failed, so save in indexed db
+      saveRecord(transaction);
+
+      // clear form
+      nameEl.value = "";
+      amountEl.value = "";
     });
 }
 

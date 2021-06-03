@@ -5,10 +5,8 @@ let offlineTransactionWatch = setInterval(function () {
   if (window.navigator.onLine && storedTransactions.length) {
     console.log('todo')
     storedTransactions.forEach(function (transaction) {
-      let isAdding = transaction.value > 0;
-      sendTransaction(isAdding, transaction);
-    });
-    localStorage.removeItem('storedTransactions');
+        console.log(transaction)
+    })
   }
 }, 2000);
 
@@ -25,7 +23,7 @@ getStoredTransactions = () => {
 fetchInterceptor = (...args) => (async (args) => {
   let response;
   console.log(args);
-  if (window.navigator.onLine) {
+  if (!window.navigator.onLine) {
     response = await fetch(...args);
   } else {
     if (args.length > 1) {
@@ -123,40 +121,40 @@ function populateChart() {
   });
 }
 
-function sendTransaction(isAdding, transaction = null) {
+function sendTransaction(isAdding) {
   let nameEl = document.querySelector("#t-name");
   let amountEl = document.querySelector("#t-amount");
   let errorEl = document.querySelector(".form .error");
-  if (transaction == null) {
-    // validate form
-    if (nameEl.value === "" || amountEl.value === "") {
-      errorEl.textContent = "Missing Information";
-      return;
-    }
-    else {
-      errorEl.textContent = "";
-    }
 
-    // create record
-    transaction = {
-      name: nameEl.value,
-      value: amountEl.value,
-      date: new Date().toISOString()
-    };
-
-    // if subtracting funds, convert amount to negative number
-    if (!isAdding) {
-      transaction.value *= -1;
-    }
-
-    // add to beginning of current array of data
-    transactions.unshift(transaction);
-
-    // re-run logic to populate ui with new record
-    populateChart();
-    populateTable();
-    populateTotal();
+  // validate form
+  if (nameEl.value === "" || amountEl.value === "") {
+    errorEl.textContent = "Missing Information";
+    return;
   }
+  else {
+    errorEl.textContent = "";
+  }
+
+  // create record
+  let transaction = {
+    name: nameEl.value,
+    value: amountEl.value,
+    date: new Date().toISOString()
+  };
+
+  // if subtracting funds, convert amount to negative number
+  if (!isAdding) {
+    transaction.value *= -1;
+  }
+
+  // add to beginning of current array of data
+  transactions.unshift(transaction);
+
+  // re-run logic to populate ui with new record
+  populateChart();
+  populateTable();
+  populateTotal();
+
   // also send to server
   fetchInterceptor("/api/transaction", {
     method: "POST",
